@@ -41,12 +41,17 @@ module.exports = {
   baseUrl: "/" + CLIENT + "/",
   favicon: "img/favicon.svg",
 
-  // Fail the build on a broken internal link rather than shipping it. Worth knowing: this does
-  // NOT check images - a missing image still builds clean, which is why scripts/verify.mjs
-  // checks image paths separately.
+  // Fail the build on a broken internal link rather than shipping it.
+  //
+  // Images: Docusaurus 3 DOES fail on a broken MARKDOWN image - ![x](./missing.png) - through
+  // markdown.hooks.onBrokenMarkdownImages, which defaults to throwing. What it does not check is a
+  // raw <img src="..."> tag, so scripts/verify.mjs checks those against the built output.
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "throw",
   onDuplicateRoutes: "throw",
+
+  // Under markdown.hooks, not top level: the top-level onBrokenMarkdownLinks is
+  // deprecated in Docusaurus 3 and is removed in 4.
+  markdown: { hooks: { onBrokenMarkdownLinks: "throw" } },
 
   // Client documentation is not for search engines. The gate is the real control; this is the
   // belt-and-braces layer for anything that slips in front of it, such as a preview deployment.

@@ -51,6 +51,7 @@ fs.writeFileSync(
   path.join(dir, "docs", "intro.md"),
   `---
 sidebar_position: 1
+slug: /
 title: Overview
 ---
 

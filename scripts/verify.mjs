@@ -22,8 +22,8 @@
  *  5 shared root is empty          - a file at dist/ root is served above every access rule and
  *                                    is therefore readable by anyone who finds the domain
  *  6 internal/ never published     - staff notes must not appear in any client's output
- *  7 images resolve                - onBrokenLinks catches links but NOT images, so a missing
- *                                    image ships clean and silent; this closes that gap
+ *  7 images resolve                - Docusaurus fails on a broken MARKDOWN image by itself, but
+ *                                    not on a raw <img src="..."> tag; this covers those
  *  8 nested routing               - client -> projects -> project -> page must actually produce
  *                                    a page, since deep nesting is what "projects" relies on
  */
@@ -80,34 +80,78 @@ const htmlFiles = (c) => built[c].filter((f) => f.endsWith(".html"));
     : pass("Every client folder built", `${clients.length} of ${clients.length}`);
 }
 
+/* ---------- 1b. the build is not STALE ----------
+ * Learned the hard way: a failed build leaves the previous output in place, so every check below
+ * can pass against a dist/ that no longer matches the source. Nothing here is trustworthy unless
+ * the output is newer than the files it came from.
+ */
+{
+  const newest = (dir) =>
+    walk(dir).reduce((m, f) => Math.max(m, fs.statSync(path.join(dir, f)).mtimeMs), 0);
+  const stale = [];
+  for (const c of clients) {
+    const src = newest(path.join(CLIENTS_DIR, c));
+    const out = newest(path.join(DIST, c));
+    if (!out || src > out) stale.push(c);
+  }
+  stale.length
+    ? fail("Build is current, not stale", `source newer than output for: ${stale.join(", ")} - rebuild`)
+    : pass("Build is current, not stale", "all outputs newer than their sources");
+}
+
+/* ---------- 1c. /<client>/ itself resolves ----------
+ * The bare client path is the one the access rule has to cover and the one a client is actually
+ * given. Without `slug: /` on a landing page the root is a 404 while every deeper page works, so
+ * it is easy to ship and easy to miss.
+ */
+{
+  const rootless = clients.filter((c) => !built[c].includes("index.html"));
+  rootless.length
+    ? fail("Client root page exists", `no index.html at the root of: ${rootless.join(", ")} (needs slug: / on a page)`)
+    : pass("Client root page exists", `/<client>/ resolves for all ${clients.length}`);
+}
+
 /* ---------- 2. canary leak ----------
  * A canary is any CANARY-XXXX token written into a client's source docs. Ownership is taken from
  * the source tree, then every OTHER client's build output is searched for it. This is the
  * directional check: N clients give N x (N-1) meaningful comparisons.
  */
 {
-  const owner = new Map();
+  /*
+   * Ownership is a SET per token, not a single client. Taking the first client found made the
+   * failure message name the wrong owner the moment a token appeared in two clients - which is
+   * precisely the situation the check exists to catch. A token in two clients' SOURCE is itself a
+   * failure: either someone copied another client's page, or two clients were given the same
+   * token, and in both cases the leak check downstream is no longer meaningful.
+   */
+  const claims = new Map();
   for (const c of clients) {
     for (const f of walk(path.join(CLIENTS_DIR, c, "docs"))) {
       if (!/\.(md|mdx|json)$/i.test(f)) continue;
       const txt = fs.readFileSync(path.join(CLIENTS_DIR, c, "docs", f), "utf8");
       for (const m of txt.matchAll(/CANARY-[A-Z0-9][A-Z0-9-]*/g)) {
-        if (!owner.has(m[0])) owner.set(m[0], c);
+        if (!claims.has(m[0])) claims.set(m[0], new Set());
+        claims.get(m[0]).add(c);
       }
     }
   }
 
-  if (!owner.size) {
+  if (!claims.size) {
     fail("Canary leak", "no CANARY- tokens found in any client's docs, so nothing was proven");
   } else {
     const leaks = [];
     let comparisons = 0;
-    for (const [token, own] of owner) {
+    for (const [token, owners] of claims) {
+      if (owners.size > 1) {
+        leaks.push(`${token} appears in the SOURCE of ${[...owners].join(" and ")}`);
+        continue; // attribution is ambiguous, so the dist scan below would be misleading
+      }
+      const own = [...owners][0];
       for (const other of clients) {
         if (other === own) continue;
         comparisons++;
         const hit = htmlFiles(other).find((f) => textOf(other, f).includes(token));
-        if (hit) leaks.push(`${token} (owned by ${own}) found in ${other}/${hit}`);
+        if (hit) leaks.push(`${token} (${own}'s) found in ${other}/${hit}`);
       }
       // and it must genuinely be in its OWN build, or the check proves nothing
       if (!htmlFiles(own).some((f) => textOf(own, f).includes(token))) {
@@ -116,7 +160,7 @@ const htmlFiles = (c) => built[c].filter((f) => f.endsWith(".html"));
     }
     leaks.length
       ? fail("Canary leak", leaks.join("; "))
-      : pass("Canary leak", `0 found across ${comparisons} directional checks, ${owner.size} tokens`);
+      : pass("Canary leak", `0 found across ${comparisons} directional checks, ${claims.size} tokens`);
   }
 }
 
