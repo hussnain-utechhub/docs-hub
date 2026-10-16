@@ -1,0 +1,32 @@
+/*
+ * Shared across every client site. Keep client-specific styling OUT of here - if one client needs
+ * a different look, give client.json a field for it and read that in docusaurus.config.js, so the
+ * "adding a client edits no shared file" property survives.
+ */
+:root {
+  --ifm-color-primary: #1b6fe0;
+  --ifm-color-primary-dark: #1864ca;
+  --ifm-color-primary-darker: #175fbf;
+  --ifm-color-primary-darkest: #134e9d;
+  --ifm-color-primary-light: #2f7ce4;
+  --ifm-color-primary-lighter: #3b83e6;
+  --ifm-color-primary-lightest: #5f99eb;
+  --ifm-code-font-size: 93%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] {
+  --ifm-color-primary: #6aa9f0;
+  --ifm-color-primary-dark: #4c97ec;
+  --ifm-color-primary-darker: #3d8eeb;
+  --ifm-color-primary-darkest: #1771d9;
+  --ifm-color-primary-light: #88bbf4;
+  --ifm-color-primary-lighter: #97c4f5;
+  --ifm-color-primary-lightest: #c3dcf9;
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.12);
+}
+
+.markdown table {
+  display: table;
+  width: 100%;
+}

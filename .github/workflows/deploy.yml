@@ -1,0 +1,59 @@
+# Builds every client on push and publishes dist/ as one artifact.
+#
+# The deploy step is intentionally left for you to fill in: where this goes depends on the hosting
+# decision, and a half-configured deploy that silently publishes to the wrong place is worse than
+# no deploy. Cloudflare Pages is the one that pairs with Cloudflare Access; the commented block
+# below is what that looks like.
+#
+# The verify step is NOT optional. It is what stops a build that leaked one client's content into
+# another's folder from ever reaching the host.
+name: Build client docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build every client
+        run: npm run build
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+
+      - name: Verify per-client isolation
+        run: npm run verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-sites
+          path: dist/
+          retention-days: 7
+
+      # --- Publishing. Uncomment once the domain and host are settled. ---
+      #
+      # - name: Publish to Cloudflare Pages
+      #   uses: cloudflare/wrangler-action@v3
+      #   with:
+      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      #     command: pages deploy dist --project-name=docs-hub
+      #
+      # Do NOT publish to GitHub Pages. A Pages site is readable by the entire internet even from
+      # a private repository - private Pages is a GitHub Enterprise Cloud feature. Publishing here
+      # would expose every client's documentation to anyone who guesses a path.

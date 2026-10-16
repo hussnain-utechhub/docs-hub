@@ -1,0 +1,31 @@
+{
+  "name": "docs-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One private repo holding every client's documentation, published as separate per-client sites.",
+  "scripts": {
+    "build": "node scripts/build-all.mjs",
+    "start": "node scripts/start-one.mjs",
+    "new-client": "node scripts/new-client.mjs",
+    "verify": "node scripts/verify.mjs"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "clsx": "2.1.1",
+    "prism-react-renderer": "2.4.1",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "engines": {
+    "node": ">=20.0"
+  },
+  "browserslist": {
+    "production": [">0.5%", "not dead", "not op_mini all"],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 3 safari version"
+    ]
+  }
+}
