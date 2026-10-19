@@ -38,10 +38,18 @@ jobs:
       - name: Build every client
         run: npm run build
         env:
+          # The ORIGIN only, e.g. https://hussnain-utechhub.github.io
           SITE_URL: ${{ vars.SITE_URL }}
+          # The DIRECTORY the hub hangs under, and the one people forget. A GitHub Pages PROJECT
+          # site serves from /<repo>/, so this is "/docs-hub". A custom domain serves from the
+          # root, so leave it unset. Wrong value = every asset one directory too high, and the
+          # site deploys green while rendering unstyled.
+          BASE_PREFIX: ${{ vars.BASE_PREFIX }}
 
       - name: Verify per-client isolation
         run: npm run verify
+        env:
+          BASE_PREFIX: ${{ vars.BASE_PREFIX }}
 
       - uses: actions/upload-artifact@v4
         with:
@@ -49,7 +57,15 @@ jobs:
           path: dist/
           retention-days: 7
 
-      # --- Publishing. Uncomment once the domain and host are settled. ---
+      # Pages publishes ONE directory, and dist/ already holds one folder per client, so the
+      # whole of dist/ is the artifact: each client lands at /<repo>/<client>/.
+      - name: Upload Pages artifact
+        if: vars.PUBLISH_TARGET == 'github-pages'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      # --- The eventual gated host. Uncomment once the domain is settled. ---
       #
       # - name: Publish to Cloudflare Pages
       #   uses: cloudflare/wrangler-action@v3
@@ -57,7 +73,30 @@ jobs:
       #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       #     command: pages deploy dist --project-name=docs-hub
-      #
-      # Do NOT publish to GitHub Pages. A Pages site is readable by the entire internet even from
-      # a private repository - private Pages is a GitHub Enterprise Cloud feature. Publishing here
-      # would expose every client's documentation to anyone who guesses a path.
+
+  # ===========================================================================================
+  # GITHUB PAGES - A TEST TARGET ONLY, AND IT IS PUBLIC.
+  #
+  # A Pages site is readable by the ENTIRE INTERNET. Private Pages is a GitHub Enterprise Cloud
+  # feature, so making the repository private does not make the site private: it protects the
+  # source and nothing else. There is NO access gate on this path - any client folder published
+  # here can be read by anyone who guesses the URL.
+  #
+  # That is acceptable only while every client/ folder is a fictional demo. BEFORE THE FIRST REAL
+  # CLIENT: clear the PUBLISH_TARGET variable, disable Pages in Settings, and move to the gated
+  # host above. See internal/access-rules.md.
+  #
+  # It stays opt-in: nothing publishes unless the repo variable PUBLISH_TARGET is set to
+  # "github-pages", so this job cannot fire by accident.
+  # ===========================================================================================
+  deploy:
+    needs: build
+    if: vars.PUBLISH_TARGET == 'github-pages'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -4,6 +4,7 @@ Staff only. Nothing in this folder is ever built or published — `scripts/build
 `clients/` and nothing else, and `npm run verify` checks that no page from here appears in any
 client's output.
 
+- [adding-a-client.md](adding-a-client.md) — folder to live page, start here
 - [access-rules.md](access-rules.md) — who can open which client's docs, and the wildcard trap
 - [runbook.md](runbook.md) — what to do when something goes wrong
 

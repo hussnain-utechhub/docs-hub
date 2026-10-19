@@ -14,7 +14,25 @@ reason this hub builds each client separately: the gate decides *who*, and the s
 decide *what is even in the folder to serve*. Two independent layers, and the second one holds
 even if the first is misconfigured.
 
-**Do not publish this to GitHub Pages.** The CI workflow says so too.
+**GitHub Pages cannot be the permanent home.** It is in use as a test target while every client is
+a fictional demo — see the next section for what that costs and what has to happen before a real
+client arrives.
+
+## The GitHub Pages test target — PUBLIC, NO GATE
+
+While the hub is being tested it is published to GitHub Pages. **There is no gate on that path at
+all.** A Pages site is readable by the entire internet; private Pages is a GitHub Enterprise Cloud
+feature, so a private repository protects the source and nothing else.
+
+That is acceptable only while every folder under `clients/` is a fictional demo.
+
+**Before the first real client goes in:**
+
+1. Clear the `PUBLISH_TARGET` repo variable, so the deploy job stops firing.
+2. Disable Pages under Settings -> Pages.
+3. Move to the gated host below, and prove it with the four tests at the end of this page.
+
+Until those are done, treat every published URL as public, because it is.
 
 ## The recommended gate
 

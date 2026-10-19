@@ -185,22 +185,49 @@ const htmlFiles = (c) => built[c].filter((f) => f.endsWith(".html"));
     : pass("Cross-client name or path reference", "0 found");
 }
 
-/* ---------- 4. every asset URL sits under this client's own prefix ---------- */
+/* ---------- 4. every asset URL sits under this client's own prefix ----------
+ * The prefix has to match the one the site was BUILT with, not the one this process happens to
+ * have in its environment. A build made with BASE_PREFIX=/docs-hub checked by a bare `npm run
+ * verify` would otherwise report every URL on every page as a stray - hundreds of failures, all
+ * of them the checker's fault. So it is read back out of the built HTML and only falls back to
+ * the environment when nothing can be read.
+ */
 {
+  /*
+   * Read the prefix back out of the built HTML rather than trusting the environment, so a build
+   * made with BASE_PREFIX set can be checked by a plain `npm run verify`.
+   *
+   * It comes from an emitted asset URL, not from a "baseUrl" key: Docusaurus does not write its
+   * baseUrl into the page as a value. The only occurrences of that word are in the copy of its
+   * own "base url issue" banner, which would have matched a naive search and returned nonsense.
+   */
+  const prefixOf = (c) => {
+    const re = new RegExp(`(?:src|href)="((?:/[^"/]+)*?)/${c}/`);
+    for (const f of htmlFiles(c)) {
+      const m = textOf(c, f).match(re);
+      if (m) return m[1]; // "" when the hub is served from the root
+    }
+    const raw = (process.env.BASE_PREFIX || "").trim();
+    return raw === "" || raw === "/" ? "" : "/" + raw.replace(/^\/+|\/+$/g, "");
+  };
+
   const strays = [];
+  const seen = new Set();
   for (const c of clients) {
+    const pfx = prefixOf(c);
+    seen.add(pfx || "(none)");
     for (const f of htmlFiles(c)) {
       const txt = textOf(c, f);
       for (const m of txt.matchAll(/(?:src|href)="(\/[^"]*)"/g)) {
         const url = m[1];
-        if (url.startsWith(`/${c}/`)) continue;
-        strays.push(`${c}/${f} -> ${url}`);
+        if (url.startsWith(`${pfx}/${c}/`)) continue;
+        strays.push(`${c}/${f} -> ${url}  (expected under ${pfx}/${c}/)`);
       }
     }
   }
   strays.length
     ? fail("Assets namespaced under the client's own path", [...new Set(strays)].slice(0, 8).join("; "))
-    : pass("Assets namespaced under the client's own path", "all");
+    : pass("Assets namespaced under the client's own path", `all, under ${[...seen].join(", ")}`);
 }
 
 /* ---------- 5. nothing sits at the shared root ---------- */

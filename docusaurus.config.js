@@ -31,14 +31,26 @@ if (!meta.name) throw new Error(`clients/${CLIENT}/client.json must have a "name
  * /<client>* covers the whole site. Serve two clients from / and their assets would collide in
  * one namespace, and a rule could not separate them.
  *
- * SITE_URL has no effect on where files land - only on absolute URLs in sitemap and metadata -
- * so a wrong value here cannot leak one client into another's build.
+ * BASE_PREFIX is the directory the whole hub hangs under, and it is the setting people forget.
+ * A GitHub Pages PROJECT site serves from /<repo>/, so the hub lives at /docs-hub/ and this client
+ * at /docs-hub/<client>/. A custom domain serves from the root, so the prefix is empty. Get it
+ * wrong and every asset resolves one directory too high: the pages still build, still deploy, and
+ * render unstyled or 404 with no error anywhere to explain it.
+ *
+ * It is normalised rather than trusted: "docs-hub", "/docs-hub" and "/docs-hub/" all mean the same
+ * thing, and a value typed either way should not change what gets built.
+ *
+ * SITE_URL is only the ORIGIN (https://user.github.io). It has no effect on where files land -
+ * only on absolute URLs in metadata - so a wrong value there cannot leak one client into another.
  */
+const rawPrefix = (process.env.BASE_PREFIX || "").trim();
+const PREFIX = rawPrefix === "" || rawPrefix === "/" ? "" : "/" + rawPrefix.replace(/^\/+|\/+$/g, "");
+
 module.exports = {
   title: meta.name,
   tagline: meta.tagline || "",
   url: process.env.SITE_URL || "https://docs.example.com",
-  baseUrl: "/" + CLIENT + "/",
+  baseUrl: PREFIX + "/" + CLIENT + "/",
   favicon: "img/favicon.svg",
 
   // Fail the build on a broken internal link rather than shipping it.

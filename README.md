@@ -49,6 +49,8 @@ between the build and the deploy.
 3. Commit and push. The build runs on push and builds every client.
 4. **Add the access rule for `/their-name*`** before sharing the link.
 
+Full walkthrough: [`internal/adding-a-client.md`](internal/adding-a-client.md).
+
 Step 4 is the only step outside this repo, and it is done once per client. See
 [`internal/access-rules.md`](internal/access-rules.md) — including the wildcard trap that leaves a
 client's front page ungated.
