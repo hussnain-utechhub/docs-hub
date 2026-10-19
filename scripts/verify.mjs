@@ -297,6 +297,45 @@ const htmlFiles = (c) => built[c].filter((f) => f.endsWith(".html"));
     : pass("Referenced images exist", "all resolve");
 }
 
+/* ---------- 7b. the search index: present, populated, and this client's only ----------
+ * Two separate failures, and the first is silent. The site sets noIndex, and the search plugin
+ * skips any page carrying a robots noindex tag, so without forceIgnoreNoIndex it indexes NOTHING:
+ * the search box still appears and every query returns nothing, with no error. An empty index is
+ * therefore a failure, not an absence.
+ *
+ * The second is the one that matters commercially. The index is a single file containing the full
+ * text of every page it knows about, so if a build ever stopped being per-client, this file is
+ * where another client's content would show up first - and searching is exactly how someone would
+ * find it.
+ */
+{
+  const problems = [];
+  let total = 0;
+  for (const c of clients) {
+    const file = built[c].find((f) => /search-index.*\.json$/.test(f));
+    if (!file) { problems.push(`${c}: no search index built`); continue; }
+
+    let docs = 0;
+    const raw = textOf(c, file);
+    try {
+      const j = JSON.parse(raw);
+      docs = (Array.isArray(j) ? j : [j]).reduce((a, x) => a + ((x.documents || []).length), 0);
+    } catch { problems.push(`${c}: search index is not valid JSON`); continue; }
+
+    if (!docs) { problems.push(`${c}: search index is EMPTY (forceIgnoreNoIndex missing?)`); continue; }
+    total += docs;
+
+    for (const o of clients) {
+      if (o === c) continue;
+      if (raw.includes(`/${o}/`) || new RegExp(`\\b${meta[o].name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(raw))
+        problems.push(`${c}'s index contains ${o}`);
+    }
+  }
+  problems.length
+    ? fail("Search index is populated and client-scoped", [...new Set(problems)].slice(0, 6).join("; "))
+    : pass("Search index is populated and client-scoped", `${total} documents across ${clients.length} separate indexes`);
+}
+
 /* ---------- 8. deep nesting really produces pages ---------- */
 {
   const deep = [];

@@ -115,6 +115,33 @@ module.exports = {
     ],
   ],
 
+  /*
+   * Search, built at build time and shipped with the site. No third-party crawler, no external
+   * service, nothing of a client's content sent anywhere.
+   *
+   * It is PER CLIENT for free, and not by configuration: each client is its own Docusaurus build,
+   * so the index it produces can only contain the pages that build saw - this client's. There is
+   * no cross-client index to scope down, because one was never created. Searching inside Acme's
+   * site cannot surface a Globex page for the same reason Acme's folder contains no Globex file.
+   *
+   * forceIgnoreNoIndex is REQUIRED here and is the trap. This site sets noIndex: true to keep
+   * crawlers out, and the plugin skips any page carrying a robots noindex tag - so without this
+   * flag it indexes NOTHING, the search box still appears, and every query returns no results
+   * with no error anywhere. easycrm-docs never hit this because it does not set noIndex.
+   */
+  themes: [
+    [
+      "@easyops-cn/docusaurus-search-local",
+      {
+        hashed: true,
+        indexBlog: false,
+        docsRouteBasePath: "/",
+        highlightSearchTermsOnTargetPage: true,
+        forceIgnoreNoIndex: true,
+      },
+    ],
+  ],
+
   themeConfig: {
     colorMode: { defaultMode: "light", respectPrefersColorScheme: true },
     navbar: {
