@@ -6,3 +6,7 @@ dist/
 .DS_Store
 .env
 .env.local
+
+# scratch credential files - must never be committed, least of all to a public repo
+.tok
+*.tok
