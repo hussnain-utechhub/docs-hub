@@ -147,6 +147,34 @@ ${n ? `    <ul>\n${rows}\n    </ul>` : `    <p class="empty">No clients yet.</p>
 
 const enabled = ["1", "true", "yes", "on"].includes(String(process.env.STAFF_INDEX || "").toLowerCase());
 
+/*
+ * STAFF_INDEX_PATH puts the index somewhere other than the root - /docs-hub/a7f3b2c9/ instead of
+ * /docs-hub/ - so the obvious URL does not hand over the client list.
+ *
+ * BE CLEAR ABOUT WHAT THIS IS. It is obscurity, not access control. Anyone who ever receives the
+ * URL has it permanently, there is nothing to revoke, and it protects only the LIST: every client
+ * page remains at its own guessable /<client>/ path either way. It is a speed bump worth having
+ * while the clients are fictional, and it is not a substitute for the gate.
+ *
+ * Set it as a repository VARIABLE, never in a committed file. Repository variables are visible
+ * only to people with access; anything committed to a public repo is readable by everyone, which
+ * would defeat the whole point on day one.
+ *
+ * And it is never printed. On a public repository the Actions build log is readable by anyone,
+ * signed in or not - so logging the path here would publish the secret URL on every single build.
+ * That is why the line below reports a character count instead of the value.
+ */
+const rawIdx = (process.env.STAFF_INDEX_PATH || "").trim().replace(/^\/+|\/+$/g, "");
+if (rawIdx && !/^[A-Za-z0-9][A-Za-z0-9._~-]*$/.test(rawIdx)) {
+  console.error("STAFF_INDEX_PATH must be a single URL-safe path segment (letters, digits, - . _ ~).");
+  process.exit(1);
+}
+// A collision would overwrite a client's site with the staff index.
+if (rawIdx && collect().some((c) => c.slug === rawIdx)) {
+  console.error("STAFF_INDEX_PATH collides with a client folder name. Choose another.");
+  process.exit(1);
+}
+
 if (!enabled) {
   console.log("Staff index: OFF (set STAFF_INDEX=1 to build it). Nothing written to dist/.");
   process.exit(0);
@@ -157,5 +185,11 @@ if (!fs.existsSync(DIST)) {
 }
 
 const clients = collect();
-fs.writeFileSync(path.join(DIST, "index.html"), render(clients), "utf8");
-console.log(`Staff index: wrote dist/index.html listing ${clients.length} client(s) at ${prefix || ""}/`);
+const outDir = rawIdx ? path.join(DIST, rawIdx) : DIST;
+fs.mkdirSync(outDir, { recursive: true });
+fs.writeFileSync(path.join(outDir, "index.html"), render(clients), "utf8");
+
+console.log(
+  `Staff index: wrote ${clients.length} client(s) to ` +
+    (rawIdx ? `a ${rawIdx.length}-character private path (not logged)` : "the site root")
+);

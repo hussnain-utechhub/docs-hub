@@ -244,7 +244,17 @@ const htmlFiles = (c) => built[c].filter((f) => f.endsWith(".html"));
   const files = rootEntries.filter((e) => e.isFile()).map((e) => e.name).filter((n) => n !== "index.html");
   const hasIndex = rootEntries.some((e) => e.isFile() && e.name === "index.html");
   const dirs = rootEntries.filter((e) => e.isDirectory()).map((e) => e.name);
-  const unexpectedDirs = dirs.filter((d) => !clients.includes(d));
+  /*
+   * A directory at the root that is not a client is allowed ONLY if it is the staff index - a
+   * folder holding nothing but index.html. The path may be deliberately obscure, so it is
+   * recognised by its SHAPE rather than by name; naming it here would mean committing it, and a
+   * committed path on a public repo is not obscure at all.
+   */
+  const isStaffIndexDir = (d) => {
+    const inner = fs.readdirSync(path.join(DIST, d), { withFileTypes: true });
+    return inner.length === 1 && inner[0].isFile() && inner[0].name === "index.html";
+  };
+  const unexpectedDirs = dirs.filter((d) => !clients.includes(d) && !isStaffIndexDir(d));
   files.length || unexpectedDirs.length
     ? fail(
         "Shared root holds no stray files",
@@ -252,7 +262,10 @@ const htmlFiles = (c) => built[c].filter((f) => f.endsWith(".html"));
       )
     : pass(
         "Shared root holds no stray files",
-        `${dirs.length} client folders` + (hasIndex ? ", plus the staff index" : ", no root page")
+        `${clients.length} client folders` +
+          (hasIndex ? ", plus the staff index at the root"
+                    : dirs.length > clients.length ? ", plus the staff index on its own path"
+                    : ", no root page")
       );
 }
 

@@ -54,6 +54,12 @@ jobs:
           # It is the only page that knows the whole customer list, so on a host with no gate
           # switching it on is a deliberate choice, not a default.
           STAFF_INDEX: ${{ vars.STAFF_INDEX }}
+          # Optional: put the index on an unguessable path instead of the root. OBSCURITY, NOT
+          # ACCESS CONTROL - anyone who receives the URL keeps it, and every client page stays at
+          # its own guessable path regardless. Set it as a repo VARIABLE; a value committed to a
+          # public repo is readable by everyone. The script never prints it, because on a public
+          # repo the build log is public too.
+          STAFF_INDEX_PATH: ${{ vars.STAFF_INDEX_PATH }}
 
       - name: Verify per-client isolation
         run: npm run verify
