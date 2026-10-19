@@ -8,7 +8,8 @@
     "start": "node scripts/start-one.mjs",
     "new-client": "node scripts/new-client.mjs",
     "verify": "node scripts/verify.mjs",
-    "clients": "node scripts/clients.mjs"
+    "clients": "node scripts/clients.mjs",
+    "staff-index": "node scripts/build-index.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "3.10.2",

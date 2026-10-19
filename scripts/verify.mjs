@@ -239,15 +239,21 @@ const htmlFiles = (c) => built[c].filter((f) => f.endsWith(".html"));
 /* ---------- 5. nothing sits at the shared root ---------- */
 {
   const rootEntries = fs.readdirSync(DIST, { withFileTypes: true });
-  const files = rootEntries.filter((e) => e.isFile()).map((e) => e.name);
+  // index.html is the staff index and is allowed when it is switched on. Everything else at the
+  // root is still a failure: a stray file there sits above every access rule.
+  const files = rootEntries.filter((e) => e.isFile()).map((e) => e.name).filter((n) => n !== "index.html");
+  const hasIndex = rootEntries.some((e) => e.isFile() && e.name === "index.html");
   const dirs = rootEntries.filter((e) => e.isDirectory()).map((e) => e.name);
   const unexpectedDirs = dirs.filter((d) => !clients.includes(d));
   files.length || unexpectedDirs.length
     ? fail(
-        "Shared root holds no files",
+        "Shared root holds no stray files",
         [...files.map((f) => `file ${f}`), ...unexpectedDirs.map((d) => `dir ${d}/`)].join(", ")
       )
-    : pass("Shared root holds no files", `0 files, ${dirs.length} client folders only`);
+    : pass(
+        "Shared root holds no stray files",
+        `${dirs.length} client folders` + (hasIndex ? ", plus the staff index" : ", no root page")
+      );
 }
 
 /* ---------- 6. internal/ never reaches a build ---------- */

@@ -50,6 +50,10 @@ jobs:
           # root, so leave it unset. Wrong value = every asset one directory too high, and the
           # site deploys green while rendering unstyled.
           BASE_PREFIX: ${{ vars.BASE_PREFIX }}
+          # The staff index: one page at the root listing EVERY client. Off unless this is set.
+          # It is the only page that knows the whole customer list, so on a host with no gate
+          # switching it on is a deliberate choice, not a default.
+          STAFF_INDEX: ${{ vars.STAFF_INDEX }}
 
       - name: Verify per-client isolation
         run: npm run verify

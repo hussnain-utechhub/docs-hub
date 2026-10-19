@@ -98,6 +98,17 @@ for (const [i, client] of clients.entries()) {
   }
 }
 
+// The staff index, if it is switched on. After the clients, because it counts what they contain,
+// and only on a full build - a single-client build must not rewrite a root page about all of them.
+if (!only && !failed.length) {
+  try {
+    const { execFileSync } = await import("node:child_process");
+    execFileSync(process.execPath, [path.join(ROOT, "scripts", "build-index.mjs")], {
+      cwd: ROOT, env: process.env, stdio: "inherit",
+    });
+  } catch { console.error("Staff index failed to build."); }
+}
+
 const secs = ((Date.now() - started) / 1000).toFixed(1);
 console.log(`\nBuilt ${clients.length - failed.length}/${clients.length} client sites in ${secs}s.`);
 if (failed.length) console.error(`Failed: ${failed.join(", ")}`);
