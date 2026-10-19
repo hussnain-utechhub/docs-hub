@@ -48,26 +48,23 @@ fs.writeFileSync(
   "utf8"
 );
 fs.writeFileSync(
-  path.join(dir, "docs", "intro.md"),
-  `---
-sidebar_position: 1
-slug: /
-title: Overview
----
-
-# ${name}
+  path.join(dir, "docs", "index.md"),
+  `# ${name}
 
 Documentation for ${name}.
 
-Replace this page with whatever belongs first. Folders under \`docs/\` become sections in the
-sidebar on their own - there is no navigation file to edit.
+Replace this page with whatever belongs first.
+
+This file is called index.md, which is what makes it the front page - no front matter needed.
+Folders under \`docs/\` become sections in the sidebar on their own, so there is no navigation
+file to edit. Add .md files and they appear.
 `,
   "utf8"
 );
 
 console.log(`Created clients/${slug}/`);
 console.log(`  client.json      display name: ${name}`);
-console.log(`  docs/intro.md    starter page`);
+console.log(`  docs/index.md    the front page`);
 console.log("");
 console.log("Next:");
 console.log(`  1. Write the docs in clients/${slug}/docs/`);

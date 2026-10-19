@@ -1,9 +1,12 @@
 /*
  * Builds EVERY client folder into its own isolated site under dist/<client>/.
  *
- * Discovery is by convention: anything in clients/ holding a client.json is a client. There is no
- * registry to update and no per-client config anywhere else, so adding a client really is just
- * adding a folder.
+ * Discovery is by convention: anything in clients/ with a docs/ folder is a client. Not "anything
+ * with a client.json" - that file is optional, and requiring it would mean the simplest case,
+ * dropping some .md files into a new folder, failed with an error about JSON. There is no registry
+ * to update, so adding a client really is just adding a folder.
+ *
+ * A folder starting with _ is skipped, which gives a way to park a client without deleting it.
  *
  * Each client is a SEPARATE Docusaurus build, not one site with many sections. That is the
  * decision the whole privacy story rests on: a client's output folder contains only that client's
@@ -37,7 +40,8 @@ export function listClients(root = ROOT) {
     .readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => d.name)
-    .filter((n) => fs.existsSync(path.join(dir, n, "client.json")))
+    .filter((n) => !n.startsWith("_"))
+    .filter((n) => fs.existsSync(path.join(dir, n, "docs")))
     .sort();
 }
 
@@ -45,7 +49,7 @@ const all = listClients();
 const clients = all.filter((n) => !only || n === only);
 
 if (!all.length) {
-  console.error("No clients found. A client is a folder under clients/ containing client.json.");
+  console.error("No clients found. A client is a folder under clients/ with a docs/ folder in it.");
   process.exit(1);
 }
 if (!clients.length) {

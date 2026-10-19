@@ -9,9 +9,9 @@ per-client configuration anywhere.
 ```
 clients/
   acme-corp/
-    client.json          { "name": "Acme Corp" }  <- the whole config
+    client.json          OPTIONAL { "name": "Acme Corp" } - else the folder name is used
     docs/
-      intro.md
+      index.md           the front page, just by being called index.md
       projects/
         _category_.json  { "label": "Projects" }  <- optional, sets the label
         salesforce-portal/
@@ -37,6 +37,7 @@ npm start -- acme-corp                   # preview one client, live reload
 npm run build                            # build every client into dist/<client>/
 npm run verify                           # prove no client's build holds another's content
 npm run new-client -- acme-corp "Acme Corp"
+npm run clients                          # what clients exist, and their URLs
 ```
 
 `npm run verify` needs a build first. It exits non-zero on failure, which is why CI runs it

@@ -23,7 +23,7 @@ const passthrough = args.filter((a) => a.startsWith("--") || args[args.indexOf(a
 const available = fs.existsSync(CLIENTS_DIR)
   ? fs
       .readdirSync(CLIENTS_DIR, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && fs.existsSync(path.join(CLIENTS_DIR, d.name, "client.json")))
+      .filter((d) => d.isDirectory() && !d.name.startsWith("_") && fs.existsSync(path.join(CLIENTS_DIR, d.name, "docs")))
       .map((d) => d.name)
       .sort()
   : [];

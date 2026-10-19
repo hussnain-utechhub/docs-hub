@@ -18,12 +18,32 @@ if (!CLIENT) {
 }
 
 const clientDir = path.join(__dirname, "clients", CLIENT);
+
+/*
+ * client.json is OPTIONAL, and so is every field in it.
+ *
+ * The whole point of this hub is that adding a client is adding a folder of Markdown. Demanding a
+ * config file first would have made the simplest possible case - drop some .md files in - fail with
+ * an error about JSON, which is exactly the friction this design exists to avoid. So the display
+ * name falls back to the folder name, tidied up: acme-corp becomes "Acme Corp".
+ *
+ * Write a client.json only when the folder name is not the name you want shown, or to add a
+ * tagline.
+ */
+const titleFromSlug = (s) =>
+  s.split("-").filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
 const configPath = path.join(clientDir, "client.json");
-if (!fs.existsSync(configPath)) {
-  throw new Error(`clients/${CLIENT}/client.json not found - every client needs one.`);
+let meta = {};
+if (fs.existsSync(configPath)) {
+  try {
+    meta = JSON.parse(fs.readFileSync(configPath, "utf8")) || {};
+  } catch (e) {
+    // A typo in the JSON must name the file, or you are hunting a parse error with no context.
+    throw new Error(`clients/${CLIENT}/client.json is not valid JSON: ${e.message}`);
+  }
 }
-const meta = JSON.parse(fs.readFileSync(configPath, "utf8"));
-if (!meta.name) throw new Error(`clients/${CLIENT}/client.json must have a "name".`);
+if (!meta.name) meta.name = titleFromSlug(CLIENT);
 
 /*
  * baseUrl is what makes a per-path access rule airtight. Serving this client from /<client>/ puts

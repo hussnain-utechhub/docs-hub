@@ -2,9 +2,13 @@
 
 Staff notes. Nothing in `internal/` is ever published.
 
-The short version: **make a folder, write Markdown, push.** Everything else is automatic. The one
-step that is not automatic, and the one that actually controls who can read the pages, is the
-access rule — step 6.
+The short version: **make a folder, put `.md` files in it, push.** Everything else is automatic.
+The one step that is not automatic, and the one that actually controls who can read the pages, is
+the access rule — step 6.
+
+**The whole of a client is a folder with a `docs/` folder in it.** No config file is required, no
+list to register it on, no routes, no navigation file. Name the front page `index.md` and it
+becomes the client's front page; everything else appears in the sidebar from the folder structure.
 
 ---
 
@@ -28,15 +32,17 @@ bar. Lower-case letters, digits and single hyphens only; anything else either br
 rule or produces a URL that needs escaping. The script refuses a bad name, and refuses to
 overwrite a client that already exists.
 
-**`client.json` is the entire configuration.**
+**`client.json` is optional.** Without it the display name comes from the folder name —
+`acme-corp` becomes "Acme Corp". Write one only when that is not the name you want shown, or to
+add a tagline:
 
 | Field | Required | What it does |
 |---|---|---|
-| `name` | yes | Display name, shown in the navbar and footer |
+| `name` | no | Display name. Defaults to the folder name, tidied up |
 | `tagline` | no | Sits under the title |
 
-There is nothing else to register. No list of clients, no config file to edit, no route to add.
-The build finds any folder under `clients/` that contains a `client.json`.
+The build finds any folder under `clients/` that has a `docs/` folder. A folder whose name starts
+with `_` is skipped, which is a way to park a client without deleting it.
 
 ---
 
@@ -61,24 +67,30 @@ docs/
 
 Nesting is unlimited: client → projects → a project → its pages all work.
 
-### The front matter that matters
+### The front page
 
-Every page can carry a small block at the top:
+**Name it `index.md`.** That is all — no front matter, no settings. It becomes the client's front
+page at `/acme-corp/`.
+
+This matters more than it looks: `/acme-corp/` is both the link you hand the client and the path
+the access rule covers. A client folder with no `index.md` serves every deep page perfectly while
+its own front page 404s. The check in step 4 fails loudly if that ever happens.
+
+### Front matter, all of it optional
+
+No page needs any. When you want to override something:
 
 ```markdown
 ---
 sidebar_position: 1
-slug: /
 title: Overview
 ---
 ```
 
 - `sidebar_position` — order within its folder. Lower is higher up.
 - `title` — the sidebar label. Without it, the first `# Heading` is used.
-- **`slug: /` — put this on exactly ONE page per client.** It makes that page the client's front
-  page at `/acme-corp/`. Without it, `/acme-corp/` is a 404 while every deeper page works — and
-  `/acme-corp/` is both the link you hand the client and the path the access rule covers. The
-  scaffold writes it for you; the check in step 4 fails loudly if it is ever missing.
+- `slug: /` — an alternative way to make a page the front page, if you would rather not call the
+  file `index.md`. Only one page per client may have it.
 
 ### Naming a section
 

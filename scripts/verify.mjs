@@ -46,12 +46,18 @@ if (!fs.existsSync(DIST)) {
 
 const clients = fs
   .readdirSync(CLIENTS_DIR, { withFileTypes: true })
-  .filter((d) => d.isDirectory() && fs.existsSync(path.join(CLIENTS_DIR, d.name, "client.json")))
+  .filter((d) => d.isDirectory() && !d.name.startsWith("_") && fs.existsSync(path.join(CLIENTS_DIR, d.name, "docs")))
   .map((d) => d.name)
   .sort();
 
 const meta = Object.fromEntries(
-  clients.map((c) => [c, JSON.parse(fs.readFileSync(path.join(CLIENTS_DIR, c, "client.json"), "utf8"))])
+  clients.map((c) => {
+    const p = path.join(CLIENTS_DIR, c, "client.json");
+    let m = {};
+    if (fs.existsSync(p)) { try { m = JSON.parse(fs.readFileSync(p, "utf8")) || {}; } catch { m = {}; } }
+    if (!m.name) m.name = c.split("-").filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+    return [c, m];
+  })
 );
 
 /** Every file under a directory, as paths relative to it. */
